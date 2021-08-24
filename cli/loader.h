@@ -91,3 +91,16 @@ int wchar_to_utf8(const wchar_t * wstr, char *str, size_t maxlen);
 int utf8_to_wchar(const char * str, wchar_t *wstr, size_t maxlen);
 void setup_stdio(void);
 #endif
+
+#ifdef _OS_WINDOWS_
+typedef DWORD jl_thread_t;
+#else
+typedef pthread_t jl_thread_t;
+#endif
+
+typedef struct {
+    volatile jl_thread_t owner;
+    u_int32_t count;
+} jl_mutex_t;
+
+#include "../src/jloptions.h"

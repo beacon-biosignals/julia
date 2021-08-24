@@ -51,8 +51,6 @@ extern BOOL (WINAPI *hSymRefreshModuleList)(HANDLE);
 // list of modules being deserialized with __init__ methods
 jl_array_t *jl_module_init_order;
 
-size_t jl_page_size;
-
 void jl_init_stack_limits(int ismaster, void **stack_lo, void **stack_hi)
 {
 #ifdef _OS_WINDOWS_
@@ -295,7 +293,6 @@ static void post_boot_hooks(void);
 
 JL_DLLEXPORT void *jl_libjulia_internal_handle;
 JL_DLLEXPORT void *jl_libjulia_handle;
-void *jl_RTLD_DEFAULT_handle;
 JL_DLLEXPORT void *jl_exe_handle;
 #ifdef _OS_WINDOWS_
 void *jl_ntdll_handle;
@@ -616,6 +613,24 @@ static void restore_fp_env(void)
 
 JL_DLLEXPORT void julia_init(JL_IMAGE_SEARCH rel)
 {
+    // initialize shared global data
+    jl_tls_offset = -1;
+#ifdef JL_ELF_TLS_VARIANT
+    jl_tls_elf_support = 1;
+#else
+    jl_tls_elf_support = 0;
+#endif
+    jl_typeinf_world = 0;
+    jl_world_counter = 1;
+#ifndef HAVE_SSP
+    __stack_chk_guard = (uintptr_t)0xBAD57ACCBAD67ACC; // 0xBADSTACKBADSTACK
+#endif
+    jl_gc_have_pending_finalizers = 0;
+    JL_STDIN  = (JL_STREAM*)STDIN_FILENO;
+    JL_STDOUT = (JL_STREAM*)STDOUT_FILENO;
+    JL_STDERR = (JL_STREAM*)STDERR_FILENO;
+    jl_init_options();
+
     jl_init_timing();
     // Make sure we finalize the tls callback before starting any threads.
     (void)jl_get_pgcstack();

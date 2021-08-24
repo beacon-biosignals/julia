@@ -15,6 +15,10 @@ JL_EXPORTED_DATA_POINTERS(XX)
 JL_EXPORTED_DATA_SYMBOLS(XX)
 #undef XX
 
+#ifndef HAVE_SSP
+JL_DLLEXPORT size_t __stack_chk_guard;
+#endif
+
 // Declare list of exported functions (sans type)
 #define XX(name)    JL_DLLEXPORT void name(void);
 typedef void (anonfunc)(void);
@@ -28,10 +32,15 @@ JL_RUNTIME_EXPORTED_FUNCS(XX)
 JL_CODEGEN_EXPORTED_FUNCS(XX)
 #undef XX
 
+#define XX(name)    JL_DLLEXPORT anonfunc * name##_addr;
+JL_RUNTIME_EXPORTED_FUNC_ADDRS(XX)
+#undef XX
+
 // Generate lists of function names and addresses
 #define XX(name)    #name,
 static const char *const jl_runtime_exported_func_names[] = {
     JL_RUNTIME_EXPORTED_FUNCS(XX)
+    JL_RUNTIME_EXPORTED_FUNC_ADDRS(XX)
     NULL
 };
 #undef XX
@@ -45,6 +54,7 @@ static const char *const jl_codegen_exported_func_names[] = {
 #define XX(name)    &name##_addr,
 static anonfunc **const jl_runtime_exported_func_addrs[] = {
     JL_RUNTIME_EXPORTED_FUNCS(XX)
+    JL_RUNTIME_EXPORTED_FUNC_ADDRS(XX)
     NULL
 };
 static anonfunc **const jl_codegen_exported_func_addrs[] = {
